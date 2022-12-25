@@ -6,39 +6,18 @@
 double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
 double dsigmoid(double x) { return x * (1.0 - x); }
 
-template <typename T>
-std::string to_string_with_precision(const T a_value, const int n = 6)
-{
-    std::ostringstream out;
-    out.precision(n);
-    out << std::fixed << a_value;
-    return out.str();
-}
+// Define max distance of points at which the network should return 1
+static const double point_distance = 0.3;
 
-template<typename T, std::size_t M, std::size_t N>
-void printMatrix(const Matrix<T, M, N>& matrix) {
-    for (std::size_t m = 0; m < M; m++) {
-        for (std::size_t n = 0; n < N; n++) {
-	    std::cout << to_string_with_precision(matrix(m, n), 2) << " ";
-	}
-	std::cout << std::endl;
-    }
-}
-
-// Linear graph definition
-double f(double x) {
-    return 0.42 * x;
-}
-
-// Oracle to tell wether a point is over the line or not
+// Tell wether points x and y are within the specified distance
 bool oracle(double x, double y) {
-    return y > f(x);
+    return std::abs(x - y) <= point_distance;
 }
 
 int main() {
     // Define neural network structure
-    using NetType = BPNet<double, sigmoid, dsigmoid, 2, 4, 1>;
-    static constexpr std::size_t TrainingCycles = 200000; // Choose higher number for likely better results
+    using NetType = BPNet<double, sigmoid, dsigmoid, 2, 4, 4, 1>;
+    static constexpr std::size_t TrainingCycles = 1000000; // Choose higher number for likely better results
     static constexpr std::size_t ControlCycles = 1000;
 
     // Set seed of random number generator
@@ -47,7 +26,7 @@ int main() {
     // Create neural network instance and randomize matrices, set learning rate
     // Choose lower learning rate and higher TrainingCycles for more precise results
     NetType net;
-    net.setLearningRate(0.005);
+    net.setLearningRate(0.01);
     net.randomize(0.0, 1.0);
 
     // Train network with data (known input-output relations)
@@ -56,7 +35,7 @@ int main() {
 	Matrix<double, 2, 1> inputs;
 	inputs.randomize(0.0, 1.0);
 
-	// Wanted output (1 if over line, 0 if under line)
+	// Wanted output (1 if within distance, 0 if outside distance)
 	Matrix<double, 1, 1> outputs;
 	outputs(0, 0) = oracle(inputs(0, 0), inputs(1, 0)) ? 1.0 : 0.0;
 
@@ -66,7 +45,7 @@ int main() {
 
     // Feed input data into the neural network and calculate success rate
     std::size_t correct = 0;
-    std::size_t over = 0;
+    std::size_t within = 0;
     double average_error = 0.0;
 
     for (std::size_t i = 0; i < ControlCycles; i++) {
@@ -74,13 +53,13 @@ int main() {
 	Matrix<double, 2, 1> inputs;
         inputs.randomize(0.0, 1.0);
 
-        // Wanted output (1 if over line, 0 if under line)
+        // Wanted output (1 if within distance, 0 if outside distance)
         double actual = oracle(inputs(0, 0), inputs(1, 0)) ? 1.0 : 0.0;
         double wrong = !oracle(inputs(0, 0), inputs(1, 0)) ? 1.0 : 0.0;
 
-        // Count how many inputs are over the line
+        // Count how many inputs are within the circle
 	if (oracle(inputs(0, 0), inputs(1, 0))) {
-	    over++;
+	    within++;
 	}
 
 	// Get network output
@@ -97,10 +76,10 @@ int main() {
 
     // Success calculations
     double success_percentage = static_cast<double>(correct) / static_cast<double>(ControlCycles) * 100.0;
-    double over_percentage = static_cast<double>(over) / static_cast<double>(ControlCycles) * 100.0;
+    double within_percentage = static_cast<double>(within) / static_cast<double>(ControlCycles) * 100.0;
 
     // Output result
-    std::cout << "Of the " << ControlCycles << " control runs (" << over_percentage << "% over the line) " 
+    std::cout << "Of the " << ControlCycles << " control runs (" << within_percentage << "% withing the distance) " 
 	    << success_percentage << "% resulted in the correct output with an average error of " << average_error << "." << std::endl;
 
     // End of program
