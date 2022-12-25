@@ -38,14 +38,16 @@ bool oracle(double x, double y) {
 int main() {
     // Define neural network structure
     using NetType = BPNet<double, sigmoid, dsigmoid, 2, 4, 1>;
-    static constexpr std::size_t TrainingCycles = 1000000;
+    static constexpr std::size_t TrainingCycles = 200000; // Choose higher number for likely better results
     static constexpr std::size_t ControlCycles = 1000;
 
     // Set seed of random number generator
     srand(static_cast<unsigned>(time(0)));
 
-    // Create neural network instance and randomize matrices
+    // Create neural network instance and randomize matrices, set learning rate
+    // Choose lower learning rate and higher TrainingCycles for more precise results
     NetType net;
+    net.setLearningRate(0.005);
     net.randomize(0.0, 1.0);
 
     // Train network with data (known input-output relations)
@@ -98,7 +100,8 @@ int main() {
     double over_rate = static_cast<double>(over) / static_cast<double>(ControlCycles) * 100.0;
 
     // Output result
-    std::cout << "Of the " << ControlCycles << " control runs (" << over_rate << "% over the line) " << success_percentage << "% resulted in the correct output with an average error of " << average_error << "." << std::endl;
+    std::cout << "Of the " << ControlCycles << " control runs (" << over_rate << "% over the line) " 
+	    << success_percentage << "% resulted in the correct output with an average error of " << average_error << "." << std::endl;
 
     // End of program
     return 0;

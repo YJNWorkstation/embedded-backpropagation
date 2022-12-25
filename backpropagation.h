@@ -2,6 +2,7 @@
 #include <functional>
 #include <cstddef>
 #include <random>
+#include <concepts>
 
 template<typename T>
 T random(T min, T max) {
@@ -59,6 +60,7 @@ public:
 };
 
 template<typename T, T(*Activation)(T), T(*Derivative)(T), std::size_t I, std::size_t... L>
+requires std::floating_point<T>
 class BPNet {
 private:
     using SubNetType = BPNet<T, Activation, Derivative, L...>;
@@ -67,7 +69,6 @@ public:
     static constexpr T(*DERIVATIVE)(T) = Derivative;
     static constexpr std::size_t INPUTS = I;
     static constexpr std::size_t OUTPUTS = SubNetType::OUTPUTS;
-    static constexpr T LEARNING_RATE = static_cast<T>(0.002);
 private:
     static constexpr std::size_t NEXT = SubNetType::INPUTS;
 
@@ -75,6 +76,9 @@ private:
     Matrix<T, NEXT, 1> m_bias;
     SubNetType m_sub;
 public:
+    void setLearningRate(T lr) { m_sub.setLearningRate(lr); }
+    T getLearningRate() { return m_sub.getLearningRate(); }
+
     void randomize(T min, T max) {
         m_weight.randomize(min, max);
 	m_bias.randomize(min, max);
@@ -91,7 +95,7 @@ public:
         
 	Matrix<T, NEXT, 1> gradient = temp << DERIVATIVE;
         gradient *= errors;
-	gradient *= LEARNING_RATE;
+	gradient *= getLearningRate();
 	
 	Matrix<T, 1, INPUTS> hidden = ~input;
 	Matrix<T, NEXT, INPUTS> deltas = gradient * hidden;
@@ -104,14 +108,18 @@ public:
 };
 
 template<typename T, T(*Activation)(T), T(*Derivative)(T), std::size_t O>
+requires std::floating_point<T>
 class BPNet<T, Activation, Derivative, O> {
 public:
     static constexpr T(*ACTIVATION)(T) = Activation;
     static constexpr T(*DERIVATIVE)(T) = Derivative;
     static constexpr std::size_t INPUTS = O;
     static constexpr std::size_t OUTPUTS = O;
-    static constexpr T LEARNING_RATE = static_cast<T>(0.002);
+private:
+    T m_lr = static_cast<T>(0.002);
 public:
+    void setLearningRate(T lr) { m_lr = lr; }
+    T getLearningRate() { return m_lr; }
     void randomize(T min, T max) {}
     Matrix<T, OUTPUTS, 1> get(const Matrix<T, INPUTS, 1>& input) { return input; } 
     Matrix<T, INPUTS, 1> train(const Matrix<T, INPUTS, 1>& input, const Matrix<T, OUTPUTS, 1>& output) { return output - input; }
