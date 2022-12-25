@@ -10,6 +10,7 @@ T random(T min, T max) {
 }
 
 template<typename T, std::size_t M, std::size_t N>
+requires std::floating_point<T>
 class Matrix {
 public:
     static constexpr std::size_t ROWS = M;
@@ -90,10 +91,10 @@ public:
     }
 
     Matrix<T, INPUTS, 1> train(const Matrix<T, INPUTS, 1>& input, const Matrix<T, OUTPUTS, 1>& output) {
-        Matrix<T, NEXT, 1> temp = ((m_weight * input) + m_bias) << ACTIVATION;
-        Matrix<T, NEXT, 1> errors = m_sub.train(temp, output);
+        Matrix<T, NEXT, 1> next_input = ((m_weight * input) + m_bias) << ACTIVATION;
+        Matrix<T, NEXT, 1> errors = m_sub.train(next_input, output);
         
-	Matrix<T, NEXT, 1> gradient = temp << DERIVATIVE;
+	Matrix<T, NEXT, 1> gradient = next_input << DERIVATIVE;
         gradient *= errors;
 	gradient *= getLearningRate();
 	
@@ -271,6 +272,7 @@ Matrix<T, N, M> Matrix<T, M, N>::operator~() const {
 template<typename T, std::size_t M, std::size_t N>
 template<std::size_t J, std::size_t K>
 Matrix<T, M, K> Matrix<T, M, N>::operator*(const Matrix<T, J, K>& rhs) {
+    static_assert(N == J, "Matrix multiplication: Invalid matrix dimensions!");
     Matrix<T, M, K> result;
     for (std::size_t i = 0; i < Matrix<T, M, K>::ROWS; i++) {
         for (std::size_t j = 0; j < Matrix<T, M, K>::COLUMNS; j++) {
