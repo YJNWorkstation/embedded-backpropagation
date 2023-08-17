@@ -7,7 +7,7 @@ EXAMPLE_BIN := $(patsubst $(EXAMPLE_SRC)/%.cpp,$(BUILD_DIR)/%, $(wildcard $(EXAM
 examples: clean | $(EXAMPLE_BIN)
 
 $(BUILD_DIR)/%: $(EXAMPLE_SRC)/%.cpp | dir
-	$(CC) -std=c++20 -o $@ $<
+	$(CC) -std=c++20 -I ./ -o $@ $<
 
 dir:
 	mkdir $(BUILD_DIR)

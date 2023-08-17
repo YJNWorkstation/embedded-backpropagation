@@ -1,4 +1,4 @@
-#include "../backpropagation.h"
+#include "backpropagation.h"
 #include <iostream>
 #include <cmath>
 

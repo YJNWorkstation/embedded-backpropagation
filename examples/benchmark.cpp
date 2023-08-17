@@ -1,4 +1,4 @@
-#include "../backpropagation.h"
+#include "backpropagation.h"
 #include "benchmark.h"
 #include <iostream>
 #include <sys/resource.h>
